@@ -20,6 +20,7 @@
     const taskName = '{{ task_name }}';
     const models = {{ models|safe }};
     const tagSet = {{ tag_set|safe }};
+    const selected_tags = {{ selected_tags|safe }};
     const enum_src_names_and_types = {{ enum_src_names_and_types|safe }};
     const enum_ref_names = {{ enum_ref_names|safe }};
     const enum_metrics_and_names = {{ enum_metrics_and_names|safe }};
@@ -79,6 +80,13 @@
             if (nodes[i].selected) { models.push(nodes[i].textContent); }
         }
         document.getElementById('modelInput').value = models.join(",");
+
+        let tags = [];
+        let tag_nodes = document.getElementById('selectTags').children;
+        for (let i = 0; i < tag_nodes.length; i++) {
+            if (tag_nodes[i].selected) { tags.push(tag_nodes[i].textContent); }
+        }
+        document.getElementById('tagInput').value = tags.join(",");
 
         let s_metrics = '';
         let nodes2 = document.getElementById('selectSorting').children;
@@ -177,9 +185,20 @@
                                 <input type="text" class="form-control mr-lg-3" style="width:40%" placeholder="Search"
                                        name="q" value="{{ query }}">
                                 <label class="border mr-lg-3" style="width:10%">
-                                    <select class="selectpicker w-10" name="tag" multiple title="Tags"
-                                            data-live-search="true" data-selected-text-format="static" id="selectTags">
-                                        {% for t in tag_set %}<option selected>{{ t }}</option>{% endfor %}
+                                    <select class="selectpicker w-10" multiple title="Tags" data-live-search="true"
+                                            data-selected-text-format="static" id="selectTags">
+                                        {% for t in tag_set %}
+                                            {% if selected_tags|length %}
+                                                {% if t in selected_tags %}
+                                                    <option selected>{{ t }}</option>
+                                                {% else %}
+                                                    <option>{{ t }}</option>
+                                                {% endif %}
+                                            {% else %}
+                                                <option selected>{{ t }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <input type="hidden" id="tagInput" name="tag" value="" />
                                     </select>
                                 </label>
                                 <label class="border mr-lg-3" style="width:10%">
@@ -239,6 +258,10 @@
                 <br>
             </div>
 
+            <div style="display: none;">
+                <span class="tag_set">{{ tag_set }}</span>
+                <span class="selected_tags">{{ selected_tags }}</span>
+            </div>
             <div class="container">
                 {{ nav_pages(page_no, pagination[0], pagination[1], pagination[2], pagination[3]) }}
                 <br>

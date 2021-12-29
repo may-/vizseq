@@ -45,6 +45,7 @@ class VizSeqPageData(NamedTuple):
     cur_src: List[List[str]]
     cur_ref: List[List[str]]
     cur_idx: List[int]
+    cur_tags: List[int]
     viz_sent_scores: List[Dict[str, Dict[str, float]]]
     trg_lang: Optional[List[str]]
     n_cur_samples: int
@@ -69,17 +70,28 @@ class VizSeqDataPageView(object):
             metrics: Optional[List[str]] = None, query: str = '',
             sorting: int = 0, sorting_metric: str = '',
             need_lang_tags: bool = False, disable_alignment: bool = False,
+            tags: Optional[List[str]] = [],
+            is_tag_selected: Optional[List[str]] = [],
     ) -> VizSeqPageData:
         assert page_no > 0 and page_sz > 0
         page_sz = min(page_sz, MAX_PAGE_SZ)
         metrics = [] if metrics is None else metrics
         models = hypo.text_names
+
         # query
         cur_idx = list(range(len(src)))
         if src.has_text:
             cur_idx = VizSeqFilter.filter(src.text, query)
         elif ref.has_text:
             cur_idx = VizSeqFilter.filter(ref.text, query)
+
+        # filter by tags
+        if tags:
+            print('is_tag_selected', is_tag_selected[:5])
+            print('len(cur_idx)', len(cur_idx))
+            cur_idx = [idx for idx, flag in zip(cur_idx, is_tag_selected) if flag]
+            print('len(cur_idx)', len(cur_idx))
+
         n_samples = len(cur_idx)
 
         # sorting
@@ -161,6 +173,10 @@ class VizSeqDataPageView(object):
         if need_lang_tags:
             trg_lang = [VizSeqLanguageTagger.tag_lang(r) for r in cur_ref[0]]
 
+        cur_tags = []
+        if tags:
+            cur_tags = _select(tags, cur_idx)
+
         return VizSeqPageData(
             viz_src=viz_src,
             viz_ref=viz_ref,
@@ -169,6 +185,7 @@ class VizSeqDataPageView(object):
             cur_src_text=cur_src_text,
             cur_ref=cur_ref,
             cur_idx=cur_idx,
+            cur_tags=cur_tags,
             viz_sent_scores=viz_sent_scores,
             trg_lang=trg_lang,
             n_cur_samples=n_cur_samples,

@@ -49,6 +49,7 @@ class VizSeqBaseRequestHandler(web.RequestHandler):
             'p_no': str(self.get_page_no_arg()),
             's': str(self.get_sorting_arg()),
             's_metric': self.get_sorting_metric_arg(),
+            'tag': ','.join(self.get_tags_arg()),
         }
 
     def get_task_arg(self) -> str:
@@ -59,6 +60,10 @@ class VizSeqBaseRequestHandler(web.RequestHandler):
     def get_models_arg(self) -> List[str]:
         models = self.get_query_argument('m', '')
         return models.split(',') if len(models) > 0 else []
+
+    def get_tags_arg(self) -> List[str]:
+        tags = self.get_query_argument('tag', '')
+        return list(set(tags.split(','))) if len(tags) > 0 else []
 
     def get_page_sz_arg(self) -> int:
         p_sz = self.get_query_argument('p_sz', '')
@@ -100,6 +105,7 @@ class ViewHandler(VizSeqBaseRequestHandler):
         url_args = self.get_url_args()
         models = self.get_models_arg()
         task = self.get_task_arg()
+        tags = self.get_tags_arg()
         page_sz, page_no = self.get_page_sz_arg(), self.get_page_no_arg()
         query = self.get_query_arg()
         sorting = self.get_sorting_arg()
@@ -107,7 +113,7 @@ class ViewHandler(VizSeqBaseRequestHandler):
         wv = VizSeqWebView(
             args.data_root, task, models=models, page_sz=page_sz,
             page_no=page_no, query=query, sorting=sorting,
-            sorting_metric=s_metric
+            sorting_metric=s_metric, tags=tags
         )
         pd = wv.get_page_data()
         html = env.get_template('view.html').render(
@@ -118,8 +124,8 @@ class ViewHandler(VizSeqBaseRequestHandler):
             enum_ref_names=wv.enum_ref_names, trg_lang=pd.trg_lang,
             span_highlight_js=SPAN_HIGHTLIGHT_JS, page_sizes=wv.page_sizes,
             enum_metrics_and_names=wv.get_enum_metrics_and_names(),
-            tag_set=wv.get_tag_set(), tags=wv.get_tags(),
-            auto_tags=[[e] for e in pd.trg_lang],
+            tag_set=wv.get_tag_set(), auto_tags=[[e] for e in pd.trg_lang],
+            tags=pd.cur_tags, selected_tags=wv.selected_tags,
             all_metrics_and_names=wv.all_metrics_and_names, s_metric=s_metric,
             pagination=wv.get_pagination(pd.total_examples, page_sz, page_no),
             cur_idx=pd.cur_idx, viz_src=pd.viz_src, src=pd.cur_src,

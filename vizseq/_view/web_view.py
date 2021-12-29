@@ -25,7 +25,7 @@ class VizSeqWebView(object):
     def __init__(
             self, data_root: str, task: str = '', models: List[str] = (),
             page_sz: int = 10, page_no: int = 1, query: str = '',
-            sorting: int = 0, sorting_metric: str = ''
+            sorting: int = 0, sorting_metric: str = '', tags: List[str] = (),
     ):
         if not op.isdir(data_root):
             raise NotADirectoryError(f'{data_root} is not a valid data root.')
@@ -33,6 +33,7 @@ class VizSeqWebView(object):
         self.task = task
         self.dir_path = op.join(data_root, task)
         self.models = models
+        self.selected_tags = tags
         self.page_sz = page_sz
         self.page_no = page_no
         self.all_metrics_and_names = [
@@ -102,10 +103,25 @@ class VizSeqWebView(object):
         return enum_tasks_and_names_and_enum_models
 
     def get_tag_set(self) -> List[str]:
-        return list(_get_tag(self.dir_path).unique())
+        _tags = self.get_tags()
+        return list(set([tag for tags in _tags for tag in tags])) if _tags else []
 
     def get_tags(self):
-        return _get_tag(self.dir_path).text
+        tags = _get_tag(self.dir_path).text
+        clean_tags = []
+        for tag in tags:
+            clean_tag = []
+            for t in tag:
+                for s in t.split(','):
+                    s = s.strip()
+                    if s not in clean_tag:
+                        clean_tag.append(s)
+            clean_tags.append(clean_tag)
+        return clean_tags if len(clean_tags) > 0 else []
+
+    def is_tag_selected(self):
+        _tags = self.get_tags()
+        return [len(set(t).intersection(self.selected_tags)) > 0 for t in _tags]
 
     def get_enum_metrics_and_names(self):
         return [[i, s, get_scorer_name(s)] for i, s in enumerate(self.metrics)]
@@ -155,7 +171,8 @@ class VizSeqWebView(object):
         return VizSeqDataPageView.get(
             src, ref, hypo, self.page_sz, self.page_no, metrics=self.metrics,
             query=self.query, sorting=self.sorting,
-            sorting_metric=self.sorting_metric, need_lang_tags=True
+            sorting_metric=self.sorting_metric, need_lang_tags=True,
+            tags=self.get_tags(), is_tag_selected=self.is_tag_selected(),
         )
 
     def get_page_data_with_pagination(self) -> str:
