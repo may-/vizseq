@@ -273,7 +273,7 @@
                                 <b># {{ i + 1 }} / {{ n_cur_samples }} / {{ n_samples }} ( {{ cur_idx[i] + 1 }} / {{ total_examples }} )</b>
                             </div>
                             <div class="col" align="right" id="sentTagBadges">
-                                {% for t in tags[i] %}<span class="badge badge-primary">{{ t }}</span>{% endfor %}
+                                {% for t in tags[i] %}<span class="badge badge-primary">{{ t }}</span>&nbsp;{% endfor %}
                                 {% for t in auto_tags[i] %}<span class="badge badge-secondary">{{ t }}</span>{% endfor %}
                             </div>
                         </div>

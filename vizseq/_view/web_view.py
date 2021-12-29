@@ -60,6 +60,7 @@ class VizSeqWebView(object):
         )
         ref = _get_ref(self.dir_path)
         self.enum_ref_names = self.get_enum(ref.names)
+        self.filter_by_tags = False
 
     @classmethod
     def get_enum(cls, data: Iterable) -> List:
@@ -106,7 +107,7 @@ class VizSeqWebView(object):
         _tags = self.get_tags()
         return list(set([tag for tags in _tags for tag in tags])) if _tags else []
 
-    def get_tags(self):
+    def get_tags(self) -> List[List[str]]:
         tags = _get_tag(self.dir_path).text
         clean_tags = []
         for tag in tags:
@@ -119,7 +120,7 @@ class VizSeqWebView(object):
             clean_tags.append(clean_tag)
         return clean_tags if len(clean_tags) > 0 else []
 
-    def is_tag_selected(self):
+    def is_tag_selected(self) -> List[bool]:
         _tags = self.get_tags()
         return [len(set(t).intersection(self.selected_tags)) > 0 for t in _tags]
 
@@ -168,17 +169,21 @@ class VizSeqWebView(object):
         src = _get_src(dir_path)
         ref = _get_ref(dir_path)
         hypo = _get_hypo(dir_path, self.models)
+        self.filter_by_tags = 0 < len(self.selected_tags) < len(self.get_tag_set())
         return VizSeqDataPageView.get(
             src, ref, hypo, self.page_sz, self.page_no, metrics=self.metrics,
             query=self.query, sorting=self.sorting,
             sorting_metric=self.sorting_metric, need_lang_tags=True,
             tags=self.get_tags(), is_tag_selected=self.is_tag_selected(),
+            filter_by_tags=self.filter_by_tags,
         )
 
     def get_page_data_with_pagination(self) -> str:
         page_data = self.get_page_data()._asdict()
+        total_examples = sum([1 for s in self.is_tag_selected() if s]) \
+            if self.filter_by_tags else page_data['total_examples']
         page_data['pagination'] = self.get_pagination(
-            page_data['total_examples'], self.page_sz, self.page_no
+            total_examples, self.page_sz, self.page_no
         )
         return json.dumps(page_data)
 

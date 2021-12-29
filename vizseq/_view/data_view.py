@@ -72,6 +72,7 @@ class VizSeqDataPageView(object):
             need_lang_tags: bool = False, disable_alignment: bool = False,
             tags: Optional[List[str]] = [],
             is_tag_selected: Optional[List[str]] = [],
+            filter_by_tags: bool = False,
     ) -> VizSeqPageData:
         assert page_no > 0 and page_sz > 0
         page_sz = min(page_sz, MAX_PAGE_SZ)
@@ -86,11 +87,8 @@ class VizSeqDataPageView(object):
             cur_idx = VizSeqFilter.filter(ref.text, query)
 
         # filter by tags
-        if tags:
-            print('is_tag_selected', is_tag_selected[:5])
-            print('len(cur_idx)', len(cur_idx))
+        if filter_by_tags:
             cur_idx = [idx for idx, flag in zip(cur_idx, is_tag_selected) if flag]
-            print('len(cur_idx)', len(cur_idx))
 
         n_samples = len(cur_idx)
 
