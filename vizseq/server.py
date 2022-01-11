@@ -21,9 +21,12 @@ from vizseq import __version__
 
 from tornado import web, ioloop
 from jinja2 import Environment, PackageLoader, select_autoescape
+from tornado_http_auth import DigestAuthMixin, auth_required
+import basicauth
 
 DEFAULT_HOSTNAME = 'localhost'
 DEFAULT_PORT = 9001
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--hostname', type=str, default=DEFAULT_HOSTNAME,
@@ -33,7 +36,15 @@ parser.add_argument('--port', type=int, default=DEFAULT_PORT,
 parser.add_argument('--data-root', type=str, default='./examples/data',
                     help='root path to data')
 parser.add_argument('--debug', action='store_true', help='debug mode')
+parser.add_argument('--auth-path', type=str, required=True,
+                    help='path to the .htaccess file')
 args, _ = parser.parse_known_args()
+
+credentials = {}
+with open(args.auth_path, encoding='utf8') as f:
+    for line in f.readlines():
+        username, passwd = basicauth.decode(line.strip())
+        credentials[username] = passwd
 
 env = Environment(
     loader=PackageLoader('vizseq', '_templates'),
@@ -90,7 +101,8 @@ class VizSeqBaseRequestHandler(web.RequestHandler):
         return self.get_query_argument('s_metric', '')
 
 
-class TaskListHandler(VizSeqBaseRequestHandler):
+class TaskListHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         enum_tasks_and_names_and_enum_models = \
             VizSeqWebView.get_enum_tasks_and_names_and_enum_models(args.data_root)
@@ -100,7 +112,8 @@ class TaskListHandler(VizSeqBaseRequestHandler):
         self.write(html)
 
 
-class ViewHandler(VizSeqBaseRequestHandler):
+class ViewHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         url_args = self.get_url_args()
         models = self.get_models_arg()
@@ -143,7 +156,8 @@ class ViewHandler(VizSeqBaseRequestHandler):
         self.write(html)
 
 
-class PageDataHandler(VizSeqBaseRequestHandler):
+class PageDataHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         wv = VizSeqWebView(
             args.data_root, self.get_task_arg(), models=self.get_models_arg(),
@@ -154,7 +168,8 @@ class PageDataHandler(VizSeqBaseRequestHandler):
         self.write(page_data_json)
 
 
-class TaskCfgHandler(VizSeqBaseRequestHandler):
+class TaskCfgHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def post(self):
         task = self.get_task_arg()
         cfg = VizSeqWebView(args.data_root, task).cfg
@@ -170,11 +185,13 @@ class TaskCfgHandler(VizSeqBaseRequestHandler):
         self.finish(f'Task "{task}" Config updated.')
 
 
-class UploadHandler(VizSeqBaseRequestHandler):
+class UploadHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         html = env.get_template('upload.html').render()
         self.write(html)
 
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def post(self):
         file1 = self.request.files['file1'][0]
         zip_file_path = os.path.join(args.data_root, file1['filename'])
@@ -186,13 +203,15 @@ class UploadHandler(VizSeqBaseRequestHandler):
         self.redirect('/', status=303)
 
 
-class ConfigHandler(VizSeqBaseRequestHandler):
+class ConfigHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         html = env.get_template('config.html').render(
             g_cred_path=VizSeqGlobalConfigManager().g_cred_path,
         )
         self.write(html)
 
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def post(self):
         g_cred_path = self.get_argument('g_cred_path', '')
         valid = op.exists(g_cred_path)
@@ -202,7 +221,8 @@ class ConfigHandler(VizSeqBaseRequestHandler):
         self.write(json.dumps({'valid': valid}))
 
 
-class GTranslateHandler(VizSeqBaseRequestHandler):
+class GTranslateHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         sent = self.get_query_argument('s', None)
         lang = self.get_query_argument('l', None)
@@ -213,14 +233,16 @@ class GTranslateHandler(VizSeqBaseRequestHandler):
         self.write(translation)
 
 
-class StatsHandler(VizSeqBaseRequestHandler):
+class StatsHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         task = self.get_task_arg()
         response = VizSeqWebView(args.data_root, task).get_stats()
         self.write(response)
 
 
-class ScoresHandler(VizSeqBaseRequestHandler):
+class ScoresHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         response = VizSeqWebView(
             args.data_root, self.get_task_arg(), self.get_models_arg()
@@ -228,14 +250,16 @@ class ScoresHandler(VizSeqBaseRequestHandler):
         self.write(response)
 
 
-class NGramsHandler(VizSeqBaseRequestHandler):
+class NGramsHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         task = self.get_task_arg()
         response = VizSeqWebView(args.data_root, task).get_n_grams()
         self.write(response)
 
 
-class AboutHandler(VizSeqBaseRequestHandler):
+class AboutHandler(VizSeqBaseRequestHandler, DigestAuthMixin):
+    @auth_required(realm='Protected', auth_func=credentials.get)
     def get(self):
         html = env.get_template('about.html').render(
             version=__version__
