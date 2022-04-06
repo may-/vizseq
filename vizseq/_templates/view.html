@@ -92,6 +92,7 @@
         let nodes2 = document.getElementById('selectSorting').children;
         for (let i = 0; i < nodes2.length; i++) {
             if (nodes2[i].value === '6' && nodes2[i].selected) { s_metrics = nodes2[i].id.slice(13); }
+            else if (nodes2[i].value === '7' && nodes2[i].selected) { s_metrics = nodes2[i].id.slice(17); }
         }
         document.getElementById('sMetricInput').value = s_metrics;
 
@@ -234,6 +235,12 @@
                                             By metric: {{ n }}
                                         </option>
                                         {% endfor %}
+                                        {% for _, s, n in enum_metrics_and_names %}
+                                        <option id="sortingMetricDiff{{ s }}" value="7"
+                                                {% if sorting == 7 and s == s_metric %} selected {% endif %}>
+                                            By metric diff: {{ n }}
+                                        </option>
+                                        {% endfor %}
                                     </select>
                                     <input type="hidden" id="sMetricInput" name="s_metric" value="{{ s_metric }}" />
                                 </label>
@@ -259,6 +266,7 @@
             </div>
 
             <div style="display: none;">
+                <span class="url_args">{{ url_args|safe }}</span>
                 <span class="tag_set">{{ tag_set }}</span>
                 <span class="selected_tags">{{ selected_tags }}</span>
             </div>
