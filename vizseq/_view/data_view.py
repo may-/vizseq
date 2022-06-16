@@ -12,11 +12,12 @@ import numpy as np
 from vizseq._data import VizSeqDataSources, VizSeqLanguageTagger
 from .data_sorters import (VizSeqSortingType, VizSeqRandomSorter,
                            VizSeqByLenSorter, VizSeqByStrOrderSorter,
-                           VizSeqByMetricSorter)
+                           VizSeqByMetricSorter, VizSeqByMetricDiffSorter)
 from .data_filter import VizSeqFilter
 from vizseq.scorers import get_scorer, get_scorer_ids
 from vizseq._visualizers import (VizSeqSrcVisualizer, VizSeqRefVisualizer,
                                  VizSeqHypoVisualizer, VizSeqDictVisualizer)
+from vizseq._utils.logger import logger
 
 DEFAULT_PAGE_SIZE = 10
 DEFAULT_PAGE_NO = 1
@@ -107,7 +108,7 @@ class VizSeqDataPageView(object):
         elif sorting == VizSeqSortingType.src_alphabetical:
             if src.has_text:
                 cur_idx = VizSeqByStrOrderSorter.sort(src.main_text, cur_idx)
-        elif sorting == VizSeqSortingType.metric:
+        elif sorting in [VizSeqSortingType.metric, VizSeqSortingType.metric_diff]:
             if sorting_metric in get_scorer_ids():
                 _cur_ref = [_select(t, cur_idx) for t in ref.text]
                 scores = {
@@ -120,7 +121,10 @@ class VizSeqDataPageView(object):
                     {m: scores[m][i] for m in models}
                     for i in range(len(cur_idx))
                 ]
-                cur_idx = VizSeqByMetricSorter.sort(scores, cur_idx)
+                if sorting == VizSeqSortingType.metric:
+                    cur_idx = VizSeqByMetricSorter.sort(scores, cur_idx)
+                elif sorting == VizSeqSortingType.metric_diff:
+                    cur_idx = VizSeqByMetricDiffSorter.sort(scores, cur_idx)
 
         # pagination
         start_idx, end_idx = _get_start_end_idx(len(cur_idx), page_sz, page_no)

@@ -42,7 +42,7 @@ setup(
     ],
     install_requires=[
         'numpy',
-        'sacrebleu>=1.4.13',
+        'sacrebleu==1.5.1',
         'torch',
         'tqdm',
         'nltk>=3.5',
@@ -57,6 +57,8 @@ setup(
         'soundfile',
         'laserembeddings',
         'bert-score',
+        'tornado_http_auth',
+        'basicauth'
     ],
     packages=find_packages(exclude=['examples', 'tests']),
     package_data={'vizseq': ['_templates/*.html', 'VERSION']},

@@ -19,6 +19,7 @@ class VizSeqSortingType(Enum):
     src_len = 4
     src_alphabetical = 5
     metric = 6
+    metric_diff = 7
 
 
 class VizSeqOriginalSorter(object):
@@ -59,4 +60,18 @@ class VizSeqByMetricSorter(object):
         """
         avg_scores = [np.mean(list(s.values())) for s in scores]
         sorted_indices = np.argsort(avg_scores)
+        return [indices[i] for i in sorted_indices]
+
+
+class VizSeqByMetricDiffSorter(object):
+    @classmethod
+    def sort(cls, scores: List[Dict[str, float]], indices: List[int]):
+        """
+        :param scores: List of model-score dictionaries
+        :param indices:
+        :return:
+        """
+        scores_array = np.array([list(s.values()) for s in scores])
+        max_scores, min_scores = np.amax(scores_array, 1), np.amin(scores_array, 1)
+        sorted_indices = np.argsort(max_scores - min_scores)
         return [indices[i] for i in sorted_indices]
