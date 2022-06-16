@@ -116,6 +116,12 @@ class ViewHandler(VizSeqBaseRequestHandler):
             sorting_metric=s_metric, tags=tags
         )
         pd = wv.get_page_data()
+
+        total_examples = sum([1 for s in wv.is_tag_selected() if s]) if wv.filter_by_tags else pd.total_examples
+        print('filter_by_tags', wv.filter_by_tags)
+        print('total_examples', total_examples, pd.total_examples)
+        pagination = wv.get_pagination(total_examples, page_sz, page_no)
+
         html = env.get_template('view.html').render(
             url_args=url_args, task=task, models=models, page_sz=page_sz,
             page_no=page_no, sorting=sorting, query=query, metrics=wv.metrics,
@@ -126,8 +132,8 @@ class ViewHandler(VizSeqBaseRequestHandler):
             enum_metrics_and_names=wv.get_enum_metrics_and_names(),
             tag_set=wv.get_tag_set(), auto_tags=[[e] for e in pd.trg_lang],
             tags=pd.cur_tags, selected_tags=wv.selected_tags,
-            all_metrics_and_names=wv.all_metrics_and_names, s_metric=s_metric,
-            pagination=wv.get_pagination(pd.total_examples, page_sz, page_no),
+            all_metrics_and_names=wv.all_metrics_and_names,
+            s_metric=s_metric, pagination=pagination,
             cur_idx=pd.cur_idx, viz_src=pd.viz_src, src=pd.cur_src,
             ref=pd.viz_ref, hypo=pd.viz_hypo, n_samples=pd.n_samples,
             cur_sent_scores=pd.viz_sent_scores, description=wv.description,
